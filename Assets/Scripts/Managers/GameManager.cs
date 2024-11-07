@@ -2,16 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEditor;
 
 public class GameManager : MonoBehaviour
 {
     // Start is called before the first frame update
     public static GameManager Instance { get; private set; }
-    public PlayerInputMap PlayerInput { get; private set; }
-
-    public EventHandler OnPlayerEnable;
-    public EventHandler OnPlayerDisable;
-
+    [field:SerializeField]public InputManager InputManager { get; private set; }
     public Transform player {  get; private set; }
 
     #region Unity Functions
@@ -26,7 +23,6 @@ public class GameManager : MonoBehaviour
             DestroyImmediate(gameObject);
             return;
         }
-        PlayerInput = new PlayerInputMap();
     }
     void Start()
     {
@@ -45,22 +41,31 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
-    #region Inputs
-    public void EnablePlayer()
+
+
+#if UNITY_EDITOR
+    [UnityEditor.Callbacks.DidReloadScripts]
+    private static void OnScriptsReloaded()
     {
-        PlayerInput.Player.Enable();
-        PlayerInput.UI.Disable();
-        OnPlayerEnable?.Invoke(this, EventArgs.Empty);
+        UpdateScripts();
+    }
+    public static void UpdateScripts()
+    {
+        string assetPath = "Assets/Prefabs/GameManager.prefab";
+
+        GameObject contentsRoot = PrefabUtility.LoadPrefabContents(assetPath);
+
+        contentsRoot.GetComponentInChildren<GameManager>().SetValues();
+
+        PrefabUtility.SaveAsPrefabAsset(contentsRoot, assetPath);
+        PrefabUtility.UnloadPrefabContents(contentsRoot);
     }
 
-    public void EnableUI()
+    public void SetValues()
     {
-        PlayerInput.Player.Disable();
-        PlayerInput.UI.Enable();
-        OnPlayerDisable?.Invoke(this, EventArgs.Empty);
+        InputManager = GetComponentInChildren<InputManager>();
     }
-
-    #endregion
+#endif
 
     public Vector2 CurrentScreenSize()
     {
